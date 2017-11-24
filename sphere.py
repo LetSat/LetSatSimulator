@@ -1,12 +1,4 @@
-"""
-Navigation paradigm in PyOpenGL
-Needs to have PyOpenGl e.g., pip install pyopengl.
-It draws a scene for navigation paradigm to test
-if it is possible to transfer it to MALTAB with
-Psychtoolbox installed.
-Michael Tesar 2017
-Ceske Budejovice
-"""
+
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 from OpenGL.GL import *
@@ -19,10 +11,10 @@ import PIL
 from PIL import ImageTk, Image
 
 
-name = 'Navigation paradigm'
+name = 'LetSat Camera Simulator'
 
 RAD_EARTH = 6371000.
-ALTITUDE = 650000.
+ALTITUDE =   650000.
 
 def main():
     glutInit(sys.argv)
@@ -50,8 +42,10 @@ def main():
     glTranslatef(0, 0, 0)
     
     global RAD_EARTH, ALTITUDE
-    global earthTex
-    earthTex = loadtexture()
+    global earthTex, tex1, tex2
+    tex1 = loadtexture('earth.jpg')
+    tex2 = loadtexture('earth_hi.png')
+    earthTex = tex1
     
     global sphere
     sphere = gluNewQuadric()                # Create A Pointer To The Quadric Object
@@ -77,29 +71,26 @@ def main():
 
 # Keyboard controller for sphere
 def special(key, x, y):
+        global earthTex, tex1, tex2
         global angleA, angleX
+        if key == GLUT_KEY_F1:
+            if earthTex == tex1:
+                earthTex = tex2
+            else:
+                earthTex = tex1
         if key == GLUT_KEY_F2:
             image = getImage(640,640)
             display(image)
             
-        # Scale the sphere up or down
         if key == GLUT_KEY_UP:
             angleX += 1
         if key == GLUT_KEY_DOWN:
             angleX -= 1
 
-        # Rotate the cube
         if key == GLUT_KEY_LEFT:
             angleA += 1
         if key == GLUT_KEY_RIGHT:
             angleA -= 1
-
-        # Toggle the surface
-        if key == GLUT_KEY_F1:
-            if self.surface == GL_FLAT:
-                self.surface = GL_SMOOTH
-            else:
-                self.surface = GL_FLAT
 
         glutPostRedisplay()
 
@@ -108,7 +99,7 @@ angleX = 0
 angleA = 0
 def displayscene():
     
-    global sphere, angleA, angleX, fov
+    global sphere, angleA, angleX, fov, earthTex
     global RAD_EARTH
     
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
@@ -118,6 +109,7 @@ def displayscene():
     
     glRotate(angleA,0,0,1)
     glRotate(angleX,math.sin(angleA/180.*3.1415),math.cos(angleA/180.*3.1415),0)
+    glBindTexture(GL_TEXTURE_2D, earthTex)
     #         quadric       rad   slices   stacks
     gluSphere(sphere, RAD_EARTH,    360,     360) 
     
@@ -125,14 +117,14 @@ def displayscene():
     glutSwapBuffers()
     return
 
-def loadtexture():
+def loadtexture(fileImg):
     """
     Defines a global texture for applying
     in any time as fucntion
     :return:
     """
     glEnable(GL_TEXTURE_2D)
-    image = Image.open("earth.jpg")
+    image = Image.open(fileImg)
 
     ix = image.size[0]
     iy = image.size[1]
@@ -161,13 +153,13 @@ def getImage(width, height):
 
 def display(image):
     root=Tk()
-    canvas=Canvas(root, height=200, width=200)
-    basewidth = 150
+    canvas=Canvas(root, height=640, width=640)
+    basewidth = 640
     wpercent = (basewidth / float(image.size[0]))
     hsize = int((float(image.size[1]) * float(wpercent)))
     image = image.resize((basewidth, hsize), PIL.Image.ANTIALIAS)
     photo = ImageTk.PhotoImage(image)
-    item4 = canvas.create_image(100, 80, image=photo)
+    item4 = canvas.create_image(basewidth/2, basewidth/2, image=photo)
 
     canvas.pack(side = TOP, expand=True, fill=BOTH)
     root.mainloop()

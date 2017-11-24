@@ -20,15 +20,15 @@ ALTITUDE =   650000.
 
 def main():
     glutInit(sys.argv)
-    global WINDOWED, SIZE
-    WINDOWED = 0
+    global SIZE
+    FRAMEBUFFER = 1
     SIZE = 600
     
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(SIZE, SIZE)
     #glutInitWindowPosition(350, 200)
     glutCreateWindow(name)
-    if not WINDOWED:
+    if FRAMEBUFFER:
         glutHideWindow()
         fbo = glGenFramebuffers(1)
         color_buf = glGenRenderbuffers(1)
@@ -44,8 +44,7 @@ def main():
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SIZE,SIZE)
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buf)
         
-        #glBindFramebuffer(GL_FRAMEBUFFER, 0 )
-        print glCheckFramebufferStatus(GL_FRAMEBUFFER)
+        #print glCheckFramebufferStatus(GL_FRAMEBUFFER)
 
 
     glClearColor(0., 0., 0., 1.)
@@ -109,10 +108,12 @@ def tkMAIN():
     repack()
     canvas.pack(side = TOP, expand=True, fill=BOTH)
     
-    root.bind('w', handleKeypress)
-    root.bind('a', handleKeypress)
-    root.bind('s', handleKeypress)
-    root.bind('d', handleKeypress)
+    keyList = "wasdhq"
+    
+    for c in keyList.lower():
+        root.bind(c, handleKeypress)
+    for c in keyList.upper():
+        root.bind(c, handleKeypress)
     
     root.mainloop()
 
@@ -125,11 +126,11 @@ def repack():
     
 
 def handleKeypress(event):
-    print event.char
     key = event.char
     global earthTex, tex1, tex2
     global angleA, angleX
-    shift = 0#not (glutGetModifiers() ^ GLUT_ACTIVE_SHIFT)
+    shift = key.isupper()
+    key = key.lower()
     incAmount = 1
     if shift:
         incAmount = 7.5
@@ -148,6 +149,8 @@ def handleKeypress(event):
         angleA += incAmount
     if key == 'd':
         angleA -= incAmount
+    if key == 'q':
+        quit()
 
     repack()
         
@@ -156,11 +159,10 @@ fov = 141. # 141 is 1.8mm camera lens
 angleX = 0
 angleA = 0
 def displayscene():
-    global WINDOWED
     global sphere, angleA, angleX, fov, earthTex
     global RAD_EARTH
     
-    print 'disp', angleA, angleX
+    #print 'disp', angleA, angleX
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glPushMatrix()
     glRotate(angleA,0,0,1)
@@ -170,8 +172,6 @@ def displayscene():
     gluSphere(sphere, RAD_EARTH,    360,     360) 
     
     glPopMatrix()
-    if WINDOWED: 
-        glutSwapBuffers()
     return
 
 def loadtexture(fileImg):
@@ -201,10 +201,8 @@ def loadtexture(fileImg):
     return textID
 
 def getImage(width, height):
-    global WINDOWED
-    if  not WINDOWED:
-        glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        glReadBuffer(GL_COLOR_ATTACHMENT0)
+    glPixelStorei(GL_PACK_ALIGNMENT, 1)
+    glReadBuffer(GL_COLOR_ATTACHMENT0)
     buff = glReadPixels(0, 0, width, height, GL_RGB, 
                              GL_UNSIGNED_BYTE)
     image = Image.frombytes(mode="RGB", size=(width, height), 
@@ -213,19 +211,6 @@ def getImage(width, height):
     return image
 
 
-
-def display(image, wWidth, wHeight):
-    root=Tk()
-    canvas=Canvas(root, height=wHeight, width=wWidth)
-    basewidth = wWidth
-    wpercent = (basewidth / float(image.size[0]))
-    hsize = int((float(image.size[1]) * float(wpercent)))
-    image = image.resize((basewidth, hsize), PIL.Image.ANTIALIAS)
-    photo = ImageTk.PhotoImage(image)
-    item4 = canvas.create_image(basewidth/2, basewidth/2, image=photo)
-
-    canvas.pack(side = TOP, expand=True, fill=BOTH)
-    root.mainloop()
 
 if __name__ == '__main__':
     main()

@@ -44,7 +44,7 @@ def main():
     global RAD_EARTH, ALTITUDE
     global earthTex, tex1, tex2
     tex1 = loadtexture('earth.jpg')
-    tex2 = loadtexture('earth_hi.png')
+    tex2 = loadtexture('earth_hi.jpg')
     earthTex = tex1
     
     global sphere

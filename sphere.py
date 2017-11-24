@@ -73,6 +73,10 @@ def main():
 def special(key, x, y):
         global earthTex, tex1, tex2
         global angleA, angleX
+        shift = not (glutGetModifiers() ^ GLUT_ACTIVE_SHIFT)
+        incAmount = 1
+        if shift:
+            incAmount = 7.5
         if key == GLUT_KEY_F1:
             if earthTex == tex1:
                 earthTex = tex2
@@ -83,14 +87,14 @@ def special(key, x, y):
             display(image)
             
         if key == GLUT_KEY_UP:
-            angleX += 1
+            angleX += incAmount
         if key == GLUT_KEY_DOWN:
-            angleX -= 1
+            angleX -= incAmount
 
         if key == GLUT_KEY_LEFT:
-            angleA += 1
+            angleA += incAmount
         if key == GLUT_KEY_RIGHT:
-            angleA -= 1
+            angleA -= incAmount
 
         glutPostRedisplay()
 

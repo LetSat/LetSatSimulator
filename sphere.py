@@ -7,7 +7,8 @@ import sys
 import math
 import time
 
-import matplotlib.pyplot as plt
+import numpy
+import cv2
 from Tkinter import *
 import PIL
 from PIL import ImageTk, Image
@@ -16,13 +17,14 @@ from PIL import ImageTk, Image
 name = 'LetSat Camera Simulator'
 
 RAD_EARTH = 6371000.
-ALTITUDE =   650000.
+ALTITUDE =  650000.
+fov = 141. # 141 is 1.8mm camera lens
+SIZE = 700
 
 def main():
     glutInit(sys.argv)
     global SIZE
     FRAMEBUFFER = 1
-    SIZE = 600
     
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(SIZE, SIZE)
@@ -108,7 +110,7 @@ def tkMAIN():
     repack()
     canvas.pack(side = TOP, expand=True, fill=BOTH)
     
-    keyList = "wasdhq"
+    keyList = "wasdhqc"
     
     for c in keyList.lower():
         root.bind(c, handleKeypress)
@@ -117,17 +119,18 @@ def tkMAIN():
     
     root.mainloop()
 
+doCVMod = 1
+doCVMod_MAX = 4 # n 'c' cases
 def repack():
     displayscene()
     global canvas, SIZE, image, photo #Image and photo must be preserved so GC doesn't eat them
-    image = getImage(SIZE,SIZE)
+    image = getImage(SIZE,SIZE, doCVMod)
     photo = ImageTk.PhotoImage(image)
     item4 = canvas.create_image(SIZE/2,SIZE/2, image=photo)
     
-
 def handleKeypress(event):
     key = event.char
-    global earthTex, tex1, tex2
+    global earthTex, tex1, tex2, doCVMod
     global angleA, angleX
     shift = key.isupper()
     key = key.lower()
@@ -151,11 +154,12 @@ def handleKeypress(event):
         angleA -= incAmount
     if key == 'q':
         quit()
+    if key == 'c':
+        doCVMod = (doCVMod + 1) % doCVMod_MAX
 
     repack()
         
 
-fov = 141. # 141 is 1.8mm camera lens
 angleX = 0
 angleA = 0
 def displayscene():
@@ -200,7 +204,7 @@ def loadtexture(fileImg):
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
     return textID
 
-def getImage(width, height):
+def getImage(width, height, cvMod):
     glPixelStorei(GL_PACK_ALIGNMENT, 1)
     glReadBuffer(GL_COLOR_ATTACHMENT0)
     buff = glReadPixels(0, 0, width, height, GL_RGB, 
@@ -208,9 +212,31 @@ def getImage(width, height):
     image = Image.frombytes(mode="RGB", size=(width, height), 
                              data=buff)
     image = image.transpose(Image.FLIP_TOP_BOTTOM)
+    if cvMod:
+        image = performCVOps(image, cvMod)
     return image
 
+def getLatLong():
+    return "Lat "+str(angleX) + " Long "+str(((-angleA) + (1000*360)) % 360)
 
+def performCVOps(pilImage, cvMod):
+    #opencvImage = cv2.cvtColor(numpy.array(pilImage), cv2.COLOR_RGB2BGR)
+    opencvImage = numpy.array(pilImage)
+    #opencvImage = cv2.medianBlur(opencvImage,3)
+    opencvImage = text((5,20), "WASD", opencvImage)
+    opencvImage = text((5,40), getLatLong(), opencvImage)
+    
+    if (cvMod == 2):
+        # Canny
+        img_edge = cv2.Canny(opencvImage, 50, 100)
+        opencvImage = img_edge
+        
+    
+    return Image.fromarray(opencvImage)
+
+def text(coord, txt, img):
+    return cv2.putText(img, txt, coord, 
+        cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1, cv2.LINE_AA);
 
 if __name__ == '__main__':
     main()

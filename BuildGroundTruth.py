@@ -1,7 +1,8 @@
 # Build Ground Truth from NASA Blue Marble Images
-# v1.0
+# v1.1
 # Intended for use in OpenGL Simulator
-# 29 Jan 2018 - Initial Implementation v1.0
+# 29 Jan 2018 - v1.0 - Initial Implementation
+# 12 Feb 2018 - v1.1 - Configurable dialation
 # Chandler Griscom
 
 import cv2
@@ -9,10 +10,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-if len(sys.argv) != 3:
-    print "Usage: python2 BuildGroundTruth.py {src_img} {out_img}"
+dialationIters = 1
+
+if len(sys.argv) < 3 or len(sys.argv) > 4:
+    print "Usage: python2 BuildGroundTruth.py {src_img} {out_img} [dialations]"
     quit(1)
 
+if len(sys.argv) == 4:
+    dialationIters = int(sys.argv[3])
 
 img_BGR = cv2.imread(sys.argv[1])
 img_RGB = cv2.cvtColor(img_BGR, cv2.COLOR_BGR2RGB)
@@ -20,8 +25,7 @@ img_HSV = cv2.cvtColor(img_BGR, cv2.COLOR_BGR2HSV)
 
 # Create Masks
 
-def getMask(img, lowerBound, upperBound, dialationIters=0):
-    
+def getMask(img, lowerBound, upperBound, dialationIters):
   lowerSpace = np.array(lowerBound, dtype = "uint8")
   upperSpace = np.array(upperBound, dtype = "uint8")
 
@@ -29,28 +33,27 @@ def getMask(img, lowerBound, upperBound, dialationIters=0):
 
   if dialationIters > 0:
     mask = cv2.dilate(mask, np.ones((2,2), np.uint8), iterations=dialationIters);
-    #mask = cv2.blur(mask, (2,2))
 
   return mask
 
 _, plts = plt.subplots(1, 1, figsize = (20,12))
 
 # Snow is low-sat, high-value
-snowMask = getMask(img_HSV, [0, 0, 160], [180, 30, 255], 1)  # Unsaturated regions
+snowMask = getMask(img_HSV, [0, 0, 160], [180, 30, 255], dialationIters)  # Unsaturated regions
 # ^^ good and validated
 
 # Ocean is high-sat, low value, blue
-oceanMask = getMask(img_HSV, [60, 200, 0], [170, 255, 120], 1)
+oceanMask = getMask(img_HSV, [60, 200, 0], [170, 255, 120], dialationIters)
 # ^^ not bad
 
 # Grass
-grassMask = getMask(img_HSV, [35, 75, 0], [80, 255, 200], 1)
+grassMask = getMask(img_HSV, [35, 75, 0], [80, 255, 200], dialationIters)
 
 # Desert
-desertMask = getMask(img_HSV, [0, 50, 100], [40, 255, 220], 1)
+desertMask = getMask(img_HSV, [0, 50, 100], [40, 255, 220], dialationIters)
 
 # Desert or Grass
-eitherMask = getMask(img_HSV, [0, 50, 0], [90, 255, 220], 1)
+eitherMask = getMask(img_HSV, [0, 50, 0], [90, 255, 220], dialationIters)
 
 def getColorMask(origImage, mask, color):
   colorMask = getGTBase(origImage, color)

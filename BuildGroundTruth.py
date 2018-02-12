@@ -1,8 +1,9 @@
 # Build Ground Truth from NASA Blue Marble Images
-# v1.1
+# v1.2
 # Intended for use in OpenGL Simulator
 # 29 Jan 2018 - v1.0 - Initial Implementation
 # 12 Feb 2018 - v1.1 - Configurable dialation
+@ 12 Feb 2018 - v1.2 - Improve dialation order
 # Chandler Griscom
 
 import cv2
@@ -30,16 +31,21 @@ def getMask(img, lowerBound, upperBound, dialationIters):
   upperSpace = np.array(upperBound, dtype = "uint8")
 
   mask = cv2.inRange(img, lowerSpace, upperSpace)
-
-  if dialationIters > 0:
-    mask = cv2.dilate(mask, np.ones((2,2), np.uint8), iterations=dialationIters);
-
+  
+  mask = dialate(mask, dialationIters)
+  
   return mask
+
+def dialate(mask, dialationIters):
+  if dialationIters > 0:
+    mask = cv2.dilate(mask, np.ones((2,2), np.uint8), iterations=dialationIters)
+  return mask
+
 
 _, plts = plt.subplots(1, 1, figsize = (20,12))
 
 # Snow is low-sat, high-value
-snowMask = getMask(img_HSV, [0, 0, 160], [180, 30, 255], dialationIters)  # Unsaturated regions
+snowMask = getMask(img_HSV, [0, 0, 160], [180, 30, 255], 0)  # Unsaturated regions
 # ^^ good and validated
 
 # Ocean is high-sat, low value, blue
@@ -47,10 +53,10 @@ oceanMask = getMask(img_HSV, [60, 200, 0], [170, 255, 120], dialationIters)
 # ^^ not bad
 
 # Grass
-grassMask = getMask(img_HSV, [35, 75, 0], [80, 255, 200], dialationIters)
+grassMask = getMask(img_HSV, [35, 75, 0], [80, 255, 200], 0)
 
 # Desert
-desertMask = getMask(img_HSV, [0, 50, 100], [40, 255, 220], dialationIters)
+desertMask = getMask(img_HSV, [0, 50, 100], [40, 255, 220], 0)
 
 # Desert or Grass
 eitherMask = getMask(img_HSV, [0, 50, 0], [90, 255, 220], dialationIters)
@@ -77,9 +83,13 @@ def buildColorMask(origImage, maskColorPairs, baseColor):
     colorMask = overwriteWithMask(colorMask,getColorMask(origImage,pair[0],pair[1]), pair[0])
   return colorMask
 
-unclearLandMask = cv2.bitwise_and(grassMask, desertMask)
-unclearSnowMask = cv2.bitwise_and(cv2.bitwise_or(grassMask, desertMask), snowMask)
-allLand = cv2.bitwise_or(cv2.bitwise_or(grassMask, desertMask), snowMask)
+dialatedGrass = dialate(grassMask, dialationIters)
+dialatedDesert = dialate(desertMask, dialationIters)
+dialatedSnow = dialate(snowMask, dialationIters)
+
+unclearLandMask = cv2.bitwise_and(dialatedGrass, dialatedDesert)
+unclearSnowMask = cv2.bitwise_and(cv2.bitwise_or(dialatedGrass, dialatedDesert), dialatedSnow)
+allLand = cv2.bitwise_or(cv2.bitwise_or(dialatedGrass, dialatedDesert), dialatedSnow)
 unclear = cv2.bitwise_and(allLand, oceanMask)
 
 imgViz = buildColorMask(img_RGB, [

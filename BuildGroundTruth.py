@@ -3,7 +3,7 @@
 # Intended for use in OpenGL Simulator
 # 29 Jan 2018 - v1.0 - Initial Implementation
 # 12 Feb 2018 - v1.1 - Configurable dialation
-@ 12 Feb 2018 - v1.2 - Improve dialation order
+# 12 Feb 2018 - v1.2 - Improve dialation order
 # Chandler Griscom
 
 import cv2

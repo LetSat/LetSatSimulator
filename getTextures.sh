@@ -1,6 +1,6 @@
 # Texture Generation Script for OpenGL Simulator Sources
-# 12 Feb 2018 - Initial Implementation
-
+# 12 Feb 2018 - Initial Implementation v0.1
+# v0.1
 # Chandler Griscom
 
 dirlist[ 1]=73938

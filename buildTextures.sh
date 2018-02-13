@@ -27,7 +27,7 @@ mkdir build_textures
 
 for i in 0{1..9} {10..12}; do
   echo Downloading month $i
-  wget -O build_textures/tmp$i.png https://eoimages.gsfc.nasa.gov/images/imagerecords/$(( dirlist[i]-dirlist[i]%1000 ))/$(( dirlist[i] ))/world.2004$i.3x21600x10800.png
+  wget -O build_textures/tmp$i.png https://eoimages.gsfc.nasa.gov/images/imagerecords/$(( dirlist[10#$i]-dirlist[10#$i]%1000 ))/$(( dirlist[10#$i] ))/world.2004$i.3x21600x10800.png
   echo Decompressing month $i - 16384x8192
   convert -resize 16384x8192 build_textures/tmp$i.png build_textures/earth_16384_$i.bmp
   echo Building GT for month $i - 16384x8192

@@ -7,6 +7,10 @@
 
 DIALATIONS=2  # For ground truth
 
+echo "** Warning: Upwards of 10GB of disk space is"
+echo "   needed to store the image database.       **"
+sleep 2
+
 # NASA Image Source Directories
 dirlist[ 1]=73938
 dirlist[ 2]=73967

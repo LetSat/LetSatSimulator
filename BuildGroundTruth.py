@@ -41,8 +41,6 @@ def dialate(mask, dialationIters):
   return mask
 
 
-_, plts = plt.subplots(1, 1, figsize = (20,12))
-
 # Snow is low-sat, high-value
 snowMask = getMask(img_HSV, [0, 0, 160], [180, 30, 255], 0)  # Unsaturated regions
 # ^^ good and validated

@@ -1,0 +1,17 @@
+.logo {
+  background-color: black;
+  text-align: center;
+  margin:0;
+  padding:0;
+  width:100%;
+}
+
+body {
+  margin:0;
+  padding:0;
+}
+
+.textbody {
+  text-align:center;
+}
+

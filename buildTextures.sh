@@ -2,6 +2,7 @@
 # Texture Generation Script for OpenGL Simulator Sources
 # 12 Feb 2018 - v0.1 - Initial Implementation
 # 12 Feb 2018 - v0.2 - Add ground truth generation, switch to BMP
+# 05 Mar 2018 - v0.3 - Add class support
 # v0.2
 # Chandler Griscom
 
@@ -35,7 +36,7 @@ for i in 0{1..9} {10..12}; do
   echo Decompressing month $i - 16384x8192
   convert -resize 16384x8192 build_textures/tmp$i.png build_textures/earth_16384_$i.bmp
   echo Building GT for month $i - 16384x8192
-  python2 BuildGroundTruth.py build_textures/earth_16384_$i.bmp build_textures/gt_16384_$i.bmp $DIALATIONS
+  python2 BuildGroundTruth.py t1_viz build_textures/earth_16384_$i.bmp build_textures/gt_16384_$i.bmp $DIALATIONS
   rm build_textures/tmp$i.png
 done
 echo Completed

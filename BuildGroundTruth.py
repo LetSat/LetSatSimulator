@@ -1,9 +1,10 @@
 # Build Ground Truth from NASA Blue Marble Images
-# v1.2
+# v1.3
 # Intended for use in OpenGL Simulator
 # 29 Jan 2018 - v1.0 - Initial Implementation
 # 12 Feb 2018 - v1.1 - Configurable dialation
 # 12 Feb 2018 - v1.2 - Improve dialation order
+# 05 Mar 2018 - v1.3 - Add cloud gt sourcing and classes
 # Chandler Griscom
 
 import cv2
@@ -11,15 +12,25 @@ import numpy as np
 import sys
 
 dialationIters = 1
+cloudImg = ""
+classSet = ['t1_viz', 't1_segnet', 't2_viz', 't2_segnet']
 
-if len(sys.argv) < 3 or len(sys.argv) > 4:
-    print "Usage: python2 BuildGroundTruth.py {src_img} {out_img} [dialations]"
+if len(sys.argv) < 4 or len(sys.argv) > 6:
+    print "Usage: python2 BuildGroundTruth.py {class} {src_img} {out_img} [dialations] [cloudGT]"
+    print "Classes are: %s" % str(classSet)
+    quit(1)
+    
+className = str(sys.argv[1])
+if className not in classSet:
+    print 'Class "%s" not recognized. Classes are: %s' % (className, str(classSet))
     quit(1)
 
-if len(sys.argv) == 4:
-    dialationIters = int(sys.argv[3])
+if len(sys.argv) >= 5:
+    dialationIters = int(sys.argv[4])
+if len(sys.argv) >= 6:
+    cloudImg = sys.argv[5]
 
-img_BGR = cv2.imread(sys.argv[1])
+img_BGR = cv2.imread(sys.argv[2])
 img_RGB = cv2.cvtColor(img_BGR, cv2.COLOR_BGR2RGB)
 img_HSV = cv2.cvtColor(img_BGR, cv2.COLOR_BGR2HSV)
 
@@ -77,6 +88,8 @@ def overwriteWithMask(image, colorMask, binaryMask):
 def buildColorMask(origImage, maskColorPairs, baseColor):
   colorMask = getGTBase(origImage, baseColor)
   for pair in maskColorPairs:
+    if pair[0] is None:
+        continue
     colorMask = overwriteWithMask(colorMask,getColorMask(origImage,pair[0],pair[1]), pair[0])
   return colorMask
 
@@ -89,16 +102,57 @@ unclearSnowMask = cv2.bitwise_and(cv2.bitwise_or(dialatedGrass, dialatedDesert),
 allLand = cv2.bitwise_or(cv2.bitwise_or(dialatedGrass, dialatedDesert), dialatedSnow)
 unclear = cv2.bitwise_and(allLand, oceanMask)
 
+cloudMask = None
+if cloudImg != "":
+    cloud_BGR = cv2.imread(cloudImg)
+    cloud_HSV = cv2.cvtColor(cloud_BGR, cv2.COLOR_BGR2HSV)
+    unclearCloudMask = getMask(cloud_HSV, [0, 0, 80], [180, 255, 100], 0)
+    cloudMask = getMask(cloud_HSV, [0, 0, 100], [180, 255, 255], 0)
+    unclear = cv2.bitwise_or(unclear, unclearCloudMask)
+
+if className.endswith('viz'):
+    eitherColor = (255,255,0)
+    desertColor = (255,0,0)
+    grassColor = (0,255,0)
+    unclearLandColor = (255,255,0)
+    snowColor = (255,255,255)
+    unclearSnowColor = (127,127,127)
+    oceanColor = (0,0,255)
+    cloudColor = (0,255,255)
+    unclearColor = (0,0,0)
+elif className == ('t1_segnet'):
+    eitherColor = (5,5,5)
+    desertColor = (2,2,2)
+    grassColor = (3,3,3)
+    unclearLandColor = (5,5,5)
+    snowColor = (4,4,4)
+    unclearSnowColor = (5,5,5)
+    oceanColor = (1,1,1)
+    cloudColor = (5,5,5)
+    unclearColor = (5,5,5)
+elif className == ('t2_segnet'):
+    eitherColor = (2,2,2)
+    desertColor = (2,2,2)
+    grassColor = (2,2,2)
+    unclearLandColor = (2,2,2)
+    snowColor = (3,3,3)
+    unclearSnowColor = (5,5,5)
+    oceanColor = (1,1,1)
+    cloudColor = (4,4,4)
+    unclearColor = (5,5,5)
+    
+
 imgViz = buildColorMask(img_RGB, [
-    (eitherMask, (255,255,0)),
-    (desertMask, (255,0,0)),
-    (grassMask, (0,255,0)),
-    (unclearLandMask, (255,255,0)),
-    (snowMask, (255,255,255)),
-    (unclearSnowMask, (127,127,127)),
-    (oceanMask, (0,0,255)),
-    (unclear, (0,0,0))
+    (eitherMask, eitherColor),
+    (desertMask, desertColor),
+    (grassMask, grassColor),
+    (unclearLandMask, unclearLandColor),
+    (snowMask, snowColor),
+    (unclearSnowMask, unclearSnowColor),
+    (oceanMask, oceanColor),
+    (cloudMask, cloudColor),
+    (unclear, unclearColor)
 ], (0,0,0))
 
-cv2.imwrite(sys.argv[2], cv2.cvtColor(imgViz, cv2.COLOR_RGB2BGR));
+cv2.imwrite(sys.argv[3], cv2.cvtColor(imgViz, cv2.COLOR_RGB2BGR));
 print "Finished"

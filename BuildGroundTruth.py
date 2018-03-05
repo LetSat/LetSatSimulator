@@ -152,7 +152,7 @@ imgViz = buildColorMask(img_RGB, [
     (oceanMask, oceanColor),
     (cloudMask, cloudColor),
     (unclear, unclearColor)
-], (0,0,0))
+], unclearColor)
 
 cv2.imwrite(sys.argv[3], cv2.cvtColor(imgViz, cv2.COLOR_RGB2BGR));
 print "Finished"

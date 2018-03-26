@@ -2,7 +2,8 @@
 
 # LetSat OpenGL Renderer
 # 14 Feb 2018 - v0.1 - Initial Implementation
-# v0.1
+# 26 Mar 2018 - v0.2 - Setup for use as library
+# v0.2
 # Chandler Griscom
 
 from OpenGL.GLUT import *
@@ -13,13 +14,9 @@ import sys
 import math
 import time
 
-from Tkinter import *
-from PIL import ImageTk
-
 import numpy
-import cv2
-import PIL
 from PIL import Image
+import cv2
 import argparse
 
 Image.MAX_IMAGE_PIXELS = 16384*8192
@@ -54,9 +51,26 @@ def main():
     parser.add_argument('outfile', type=str, 
                     help='Path to the output image')
     
-    global args
     args = parser.parse_args()
     
+    renderInternal(args)
+
+def renderToCV(lat, long, alt, size, fov, texture):
+    return renderInternal(lat, long, alt, size, fov, texture, None)
+
+def renderToFile(lat, long, alt, size, fov, texture, outfile):
+    class RenderArgs:
+        def __init__(self):
+            self.lat = lat
+            self.long = long
+            self.alt = alt
+            self.size = size
+            self.fov = fov
+            self.texture = texture
+            self.outfile = outfile
+    return renderInternal(RenderArgs())
+
+def renderInternal(args):
     global angleA, angleX
     angleX = args.lat          # Set latitude
     angleA = -(args.long - 90) # Set longitude
@@ -129,8 +143,8 @@ def main():
     glutPostRedisplay()
     glutMainLoopEvent()
     displayscene()
-    getImage(args.size,args.size)
-    return
+    
+    return getImage(args, args.size,args.size)
 
 def displayscene():
     global sphere, angleA, angleX, fov, earthTex
@@ -168,7 +182,7 @@ def loadtexture(fileImg):
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
     return textID
 
-def getImage(width, height):
+def getImage(args, width, height):
     glPixelStorei(GL_PACK_ALIGNMENT, 1)
     glReadBuffer(GL_COLOR_ATTACHMENT0)
     buff = glReadPixels(0, 0, width, height, GL_RGB, 
@@ -177,15 +191,17 @@ def getImage(width, height):
                              data=buff)
     image = image.transpose(Image.FLIP_TOP_BOTTOM)
     
-    image = performCVOps(image)
+    image = performCVOps(args, image)
     
     return image
 
-def performCVOps(pilImage):
-    global args
+def performCVOps(args, pilImage):
     opencvImage = numpy.array(pilImage)
-    cv2.imwrite(args.outfile, cv2.cvtColor(opencvImage, cv2.COLOR_BGR2RGB))
-    return Image.fromarray(opencvImage)
+    if not args.outfile == None:
+        cv2.imwrite(args.outfile, cv2.cvtColor(opencvImage, cv2.COLOR_BGR2RGB))
+        return None
+    else:
+        return opencvImage
 
 if __name__ == '__main__':
     main()
